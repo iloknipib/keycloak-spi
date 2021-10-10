@@ -7,19 +7,20 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 
-import javax.ws.rs.*;
+import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class SendOTPRestResource {
-
-
+public class CustomRestEndPoints {
     private final KeycloakSession session;
     private final AuthenticationManager.AuthResult auth;
 
-    public SendOTPRestResource(KeycloakSession session) {
+    public CustomRestEndPoints(KeycloakSession session) {
         this.session = session;
         this.auth = new AppAuthManager.BearerTokenAuthenticator(session).authenticate();
     }
@@ -56,5 +57,4 @@ public class SendOTPRestResource {
             // handle invalid user
         }
     }
-
 }

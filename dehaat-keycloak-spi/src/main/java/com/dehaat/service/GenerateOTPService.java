@@ -23,7 +23,7 @@ public class GenerateOTPService {
         OTPCredentialModel defaultOtpCredential = getCredentialProvider(session)
                 .getDefaultCredential(session, session.getContext().getRealm(), user);
         String otp = timeBasedOTP.generateTOTP(defaultOtpCredential.getSecretData());
-        System.out.println("OTP generated "+otp);
+        System.out.println("OTP generated " + otp);
         boolean isOTPsent = MailManService.createMailManRequest("https://mailman.api.dehaatagri.com/sms/bulk", user.getFirstAttribute("mobile_number"), otp, timeIntervalInSeconds);
         return isOTPsent;
     }

@@ -44,7 +44,7 @@ public class AndroidLoginFormFactory implements AuthenticatorFactory {
 
     @Override
     public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
-        return new AuthenticationExecutionModel.Requirement[] {
+        return new AuthenticationExecutionModel.Requirement[]{
                 AuthenticationExecutionModel.Requirement.REQUIRED,
                 AuthenticationExecutionModel.Requirement.ALTERNATIVE,
                 AuthenticationExecutionModel.Requirement.DISABLED,

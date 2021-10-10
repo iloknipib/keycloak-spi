@@ -2,6 +2,7 @@
 <jboss-deployment-structure>
     <deployment>
         <dependencies>
+            <module name="org.hibernate" />
             <module name="javax.api" export="true"/>
             <module name="com.fasterxml.jackson.core.jackson-core" export="true"/>
             <module name="org.apache.httpcomponents.core" export="true"/>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
+    <changeSet author="sushil.singh@agrevolution.in" id="version-1.0">
+
+                <createTable tableName="DEHAAT_USER_MOBILE_ENTITY">
+                    <column name="ID" type="VARCHAR(36)">
+                        <constraints nullable="false"/>
+                    </column>
+                    <column name="USER_ID" type="VARCHAR(36)">
+                        <constraints nullable="false"/>
+                    </column>
+                    <column name="MOBILE" type="VARCHAR(36)">
+                        <constraints nullable="false"/>
+                    </column>
+                    <column name="REALM_ID" type="VARCHAR(36)">
+                        <constraints nullable="false"/>
+                    </column>
+                    <column name="IS_VERIFIED" type="BOOLEAN" defaultValue="false">
+                    </column>
+
+                    <column name="VERIFIED_AT" type="VARCHAR(36)">
+                        <constraints nullable="true"/>
+                    </column>
+
+                </createTable>
+
+        <addPrimaryKey constraintName="PK_DEHAAT_USER_MOBILE_ENTITY"  tableName="DEHAAT_USER_MOBILE_ENTITY"  columnNames="ID"/>
+        <addUniqueConstraint columnNames="MOBILE,REALM_ID" constraintName="UK_DEHAAT_USER_MOBILE_ENTITY_1" tableName="DEHAAT_USER_MOBILE_ENTITY"/>
+
+
+    </changeSet>
+
+</databaseChangeLog>

@@ -7,29 +7,29 @@ import org.keycloak.models.KeycloakSessionFactory;
 
 public class UserCreationEventListenerProviderFactory implements EventListenerProviderFactory {
 
-	@Override
-	public UserCreationEventListenerProvider create(KeycloakSession keycloakSession) {
-		return new UserCreationEventListenerProvider(keycloakSession);
-	}
+    @Override
+    public UserCreationEventListenerProvider create(KeycloakSession keycloakSession) {
+        return new UserCreationEventListenerProvider(keycloakSession);
+    }
 
-	@Override
-	public void init(Config.Scope scope) {
-		//
-	}
+    @Override
+    public void init(Config.Scope scope) {
+        //
+    }
 
-	@Override
-	public void postInit(KeycloakSessionFactory keycloakSessionFactory) {
-		//
-	}
+    @Override
+    public void postInit(KeycloakSessionFactory keycloakSessionFactory) {
+        //
+    }
 
-	@Override
-	public void close() {
-		//
-	}
+    @Override
+    public void close() {
+        //
+    }
 
-	@Override
-	public String getId() {
-		return "pl_event_listener";
-	}
+    @Override
+    public String getId() {
+        return "pl_event_listener";
+    }
 
 }

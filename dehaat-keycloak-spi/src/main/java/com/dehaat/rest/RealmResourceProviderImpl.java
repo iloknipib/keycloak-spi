@@ -12,7 +12,7 @@ public class RealmResourceProviderImpl implements RealmResourceProvider {
 
     @Override
     public Object getResource() {
-        return new SendOTPRestResource(session);
+        return new CustomRestEndPoints(session);
     }
 
     @Override
