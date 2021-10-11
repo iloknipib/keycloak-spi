@@ -2,6 +2,7 @@ package com.dehaat.spi.authentication;
 
 import com.dehaat.common.AuthenticationUtils;
 import com.dehaat.jpa.DehaatUserMobileEntity;
+import com.dehaat.service.DehaatUserMobileEntityService;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -45,55 +46,31 @@ public class MobileForm extends UsernamePasswordForm {
         } else {
             context.getSession().setAttribute("mobile_number", mobileNumber);
             EntityManager em = context.getSession().getProvider(JpaConnectionProvider.class).getEntityManager();
-            TypedQuery<String> query = em.createNamedQuery("getUserIdFromMobile", String.class);
-            List<String> queryResult = query.setParameter("mobile", mobileNumber)
-                    .setParameter("realmId", context.getRealm().getName())
-                    .getResultList();
+            String realm = context.getRealm().getName();
+            String userId = DehaatUserMobileEntityService.getUserIdByMobile(em, mobileNumber, realm);
 
 
-            // if mobile already registered
-            if (queryResult.size() > 0) {
-                UserEntity entity = em.find(UserEntity.class, queryResult.get(0));
-                Stream<UserModel> userStream = context.getSession().users().searchForUserStream(context.getRealm(), entity.getUsername());
-                List<UserModel> usersList = userStream.collect(Collectors.toList());
-
+            /** mobile already registered **/
+            if (userId != null && !userId.isEmpty()) {
+                List<UserModel> usersList = AuthenticationUtils.getUserEntityByUserId(em, userId, context.getRealm(), context.getSession());
                 if (usersList.size() > 0) {
                     user = usersList.get(0);
                     context.setUser(user);
                     context.success();
                 }
             } else {
-                // if  mobile comes for first time
-                String username = KeycloakModelUtils.generateId();
-                inputData.putSingle(UserModel.USERNAME, username);
-                UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
-                UserProfile profile = profileProvider.create(UserProfileContext.REGISTRATION_USER_CREATION, inputData);
-                user = profile.create();
-
-                createUserMobileEntity(em, mobileNumber, user.getId(), context.getRealm().getName());
+                /** create new user **/
+                user = AuthenticationUtils.createUser(inputData, context.getSession());
                 AuthenticationUtils.generateSecret(user.getId(), context.getSession());
+                DehaatUserMobileEntityService.createUserMobileEntity(em, mobileNumber, user.getId(), context.getRealm().getName());
                 user.setEnabled(true);
                 context.setUser(user);
                 context.success();
-
-                /** create new user **/
             }
         }
         return user != null && user.isEnabled();
     }
 
-
-    protected void createUserMobileEntity(EntityManager em, String mobileNumber, String userId, String realm) {
-        DehaatUserMobileEntity UserMobileEntity = new DehaatUserMobileEntity();
-        UserMobileEntity.setId(KeycloakModelUtils.generateId());
-        UserMobileEntity.setMobile(mobileNumber);
-        UserMobileEntity.setUserId(userId);
-        UserMobileEntity.setRealmId(realm);
-        UserMobileEntity.setIs_verified(false);
-
-        em.persist(UserMobileEntity);
-
-    }
 
     protected Response challenge(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
         LoginFormsProvider forms = context.form();

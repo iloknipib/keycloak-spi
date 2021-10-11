@@ -1,6 +1,7 @@
 package com.dehaat.spi.authentication;
 
 import com.dehaat.jpa.DehaatUserMobileEntity;
+import com.dehaat.service.DehaatUserMobileEntityService;
 import com.dehaat.service.MailManService;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -32,18 +33,12 @@ public class SmsAuthenticator extends OTPFormAuthenticator {
         KeycloakSession session = context.getSession();
 
         String mobileNumber = (String) context.getSession().getAttribute("mobile_number");
-        context.getSession().setAttribute("mobile_number",mobileNumber);
+        context.getSession().setAttribute("mobile_number", mobileNumber);
 
         if (mobileNumber != null && mobileNumber.length() == 10) {
-
             EntityManager em = context.getSession().getProvider(JpaConnectionProvider.class).getEntityManager();
-            TypedQuery<String> query = em.createNamedQuery("getUserFromMobile", String.class);
-
-            List<String> list = query.setParameter("mobile", mobileNumber)
-                    .setParameter("realmId", context.getRealm().getName())
-                    .getResultList();
-
-            if (list.size() > 0) {
+            String userId = DehaatUserMobileEntityService.getUserIdByMobile(em, mobileNumber, context.getRealm().getName());
+            if (userId != null && !userId.isEmpty()) {
 
                 int ttl = Integer.parseInt(config.getConfig().get("ttl"));
                 int length = Integer.parseInt(config.getConfig().get("length"));
@@ -99,6 +94,7 @@ public class SmsAuthenticator extends OTPFormAuthenticator {
         String secretData = defaultOtpCredential.getSecretData();
 
         UserModel userModel = context.getUser();
+        RealmModel realmModel = context.getRealm();
         if (this.enabledUser(context, userModel)) {
             if (otp == null) {
                 Response challengeResponse = this.challenge(context, (String) null);
@@ -111,18 +107,9 @@ public class SmsAuthenticator extends OTPFormAuthenticator {
                     context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
                 } else {
                     EntityManager em = context.getSession().getProvider(JpaConnectionProvider.class).getEntityManager();
-                    TypedQuery<DehaatUserMobileEntity> querySelect = em.createNamedQuery("getMobileInfoFromUser", DehaatUserMobileEntity.class);
-                    DehaatUserMobileEntity userMobileInfo = querySelect.setParameter("realmId", context.getRealm().getName())
-                            .setParameter("userId",userModel.getId())
-                            .getSingleResult();
-
-                    if(!userMobileInfo.isIs_verified()){
-                        em.createNamedQuery("updateMobileVerifiedFlag")
-                                .setParameter("is_verified",true)
-                                .setParameter("verified_at",System.currentTimeMillis())
-                                .setParameter("mobile", userMobileInfo.getMobile())
-                                .setParameter("realmId", context.getRealm().getName())
-                                .executeUpdate();
+                    DehaatUserMobileEntity userMobileInfo = DehaatUserMobileEntityService.getDehaatUserMobileEntityByUserId(em, userModel.getId(), context.getRealm().getName());
+                    if (!userMobileInfo.isIs_verified()) {
+                        DehaatUserMobileEntityService.updateMobileVerifiedFlag(em, userMobileInfo.getMobile(), realmModel.getName());
                     }
                     context.success();
                 }
@@ -137,7 +124,7 @@ public class SmsAuthenticator extends OTPFormAuthenticator {
 
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        return user.getFirstAttribute("mobile_number") != null;
+        return true;
     }
 
     @Override

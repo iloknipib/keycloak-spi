@@ -1,9 +1,12 @@
 package com.dehaat.spi.authentication;
 
+import com.dehaat.common.AuthenticationUtils;
+import com.dehaat.service.DehaatUserMobileEntityService;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.OTPCredentialProvider;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -15,6 +18,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.TimeBasedOTP;
 
+import javax.persistence.EntityManager;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
@@ -47,19 +51,32 @@ public class AndroidLoginForm extends OTPFormAuthenticator {
 
     public boolean validateUser(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
         context.clearUser();
-        String mobile_num = inputData.getFirst("mobile").trim();
+        String mobileNumber = inputData.getFirst("mobile").trim();
         UserModel user = null;
-        if (mobile_num.length() != 10) {
+        if (mobileNumber.length() != 10) {
             challengeMessage(context, "Invalid Mobile Number", "username");
         } else {
-            Stream<UserModel> userStream = context.getSession().users().searchForUserByUserAttributeStream(context.getRealm(), "mobile_number", mobile_num);
-            List<UserModel> usersList = userStream.collect(Collectors.toList());
-            if (usersList.size() > 0) {
-                user = usersList.get(0);
+            context.getSession().setAttribute("mobile_number", mobileNumber);
+            EntityManager em = context.getSession().getProvider(JpaConnectionProvider.class).getEntityManager();
+            String realm = context.getRealm().getName();
+            String userId = DehaatUserMobileEntityService.getUserIdByMobile(em, mobileNumber, realm);
+
+            /** mobile already registered **/
+            if (userId != null && !userId.isEmpty()) {
+                List<UserModel> usersList = AuthenticationUtils.getUserEntityByUserId(em, userId, context.getRealm(), context.getSession());
+                if (usersList.size() > 0) {
+                    user = usersList.get(0);
+                    context.setUser(user);
+                    context.success();
+                }
+            } else {
+                /** create new user **/
+                user = AuthenticationUtils.createUser(inputData, context.getSession());
+                AuthenticationUtils.generateSecret(user.getId(), context.getSession());
+                DehaatUserMobileEntityService.createUserMobileEntity(em, mobileNumber, user.getId(), context.getRealm().getName());
+                user.setEnabled(true);
                 context.setUser(user);
                 context.success();
-            } else {
-                challengeMessage(context, "Invalid Mobile Number", "username");
             }
         }
         return user != null && user.isEnabled();
