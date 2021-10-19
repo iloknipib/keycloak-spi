@@ -1,6 +1,7 @@
 package com.dehaat.service;
 
 import com.dehaat.jpa.DehaatUserMobileEntity;
+import org.hibernate.HibernateException;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
@@ -46,7 +47,13 @@ public class DehaatUserMobileEntityService {
         UserMobileEntity.setUserId(userId);
         UserMobileEntity.setRealmId(realm);
         UserMobileEntity.setIs_verified(false);
-        em.persist(UserMobileEntity);
+        em.getTransaction().begin();
+        try{
+            em.persist(UserMobileEntity);
+        }catch (HibernateException ex){
+            throw ex;
+        }
+        em.getTransaction().commit();
     }
 
     public static int updateMobileVerifiedFlag(EntityManager em, String mobileNumber, String realm) {

@@ -7,7 +7,6 @@ import javax.persistence.*;
 @NamedQuery(name = "getUserIdFromMobile", query = "select attr.userId from DehaatUserMobileEntity attr where attr.mobile=:mobile and attr.realmId=:realmId")
 @NamedQuery(name = "updateMobileVerifiedFlag", query = "update DehaatUserMobileEntity attr set attr.is_verified=:is_verified,attr.verified_at=:verified_at where attr.mobile=:mobile and attr.realmId=:realmId")
 
-
 @Entity
 @Table(name = "DEHAAT_USER_MOBILE_ENTITY")
 public class DehaatUserMobileEntity {
