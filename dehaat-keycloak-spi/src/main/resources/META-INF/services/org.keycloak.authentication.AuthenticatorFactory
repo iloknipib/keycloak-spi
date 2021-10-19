@@ -1,0 +1,3 @@
+com.dehaat.spi.authentication.BrowserFlowFormFactory
+com.dehaat.spi.authentication.OtpAuthenticatorFormFactory
+com.dehaat.spi.authentication.AndroidLoginFormFactory
