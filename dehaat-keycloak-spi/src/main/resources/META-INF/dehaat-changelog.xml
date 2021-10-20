@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
     <changeSet author="sushil.singh@agrevolution.in" id="version-1.0">
-        <addUniqueConstraint columnNames="NAME,VALUE" constraintName="UK_NAME_VALUE_USER_ATTR" tableName="USER_ATTRIBUTE"/>
+        <sql splitStatements="true" stripComments="true">
+            CREATE UNIQUE INDEX idx_unique_mobile_value ON USER_ATTRIBUTE (NAME,VALUE)
+            WHERE NAME = 'mobile_number'
+        </sql>
     </changeSet>
 
 </databaseChangeLog>
