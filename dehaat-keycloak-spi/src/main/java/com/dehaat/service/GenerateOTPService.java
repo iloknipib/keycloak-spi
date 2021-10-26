@@ -7,30 +7,32 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 
-/**
- * @author sushil
- **/
-public class GenerateOTPService {
+public class GenerateOTPService implements OTPGenerator {
 
     private KeycloakSession session;
+    private UserModel user;
+    private String algo;
+    private int numberDigits;
+    private int timeIntervalInSeconds;
+    private int lookAheadWindow;
 
-    public GenerateOTPService() {
-    }
-
-    public GenerateOTPService(KeycloakSession session) {
+    public GenerateOTPService(KeycloakSession session, UserModel user, String algo, int numberDigits, int timeIntervalInSeconds, int lookAheadWindow) {
         this.session = session;
+        this.user = user;
+        this.algo = algo;
+        this.numberDigits = numberDigits;
+        this.timeIntervalInSeconds = timeIntervalInSeconds;
+        this.lookAheadWindow = lookAheadWindow;
     }
 
-    public boolean generateOTPAndSend(String algo, int numberDigits, int timeIntervalInSeconds, int lookAheadWindow, UserModel user) {
+    @Override
+    public String createOTP() {
         TimeBasedOTP timeBasedOTP = new TimeBasedOTP(algo, numberDigits, timeIntervalInSeconds, lookAheadWindow);
         OTPCredentialModel defaultOtpCredential = getCredentialProvider(session)
                 .getDefaultCredential(session, session.getContext().getRealm(), user);
         String otp = timeBasedOTP.generateTOTP(defaultOtpCredential.getSecretData());
-        System.out.println("OTP generated " + otp);
-        boolean isOTPsent = MailManService.createMailManRequest("https://mailman.api.dehaatagri.com/sms/bulk", user.getFirstAttribute("mobile_number"), otp, timeIntervalInSeconds);
-        return isOTPsent;
+        return otp;
     }
-
     private OTPCredentialProvider getCredentialProvider(KeycloakSession session) {
         return (OTPCredentialProvider) session.getProvider(CredentialProvider.class, "keycloak-otp");
     }

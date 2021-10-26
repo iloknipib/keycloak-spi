@@ -1,6 +1,10 @@
 package com.dehaat.spi.authentication;
 
-import com.dehaat.service.MailManService;
+import com.dehaat.common.MobileNumberValidator;
+import com.dehaat.service.GenerateOTPService;
+import com.dehaat.service.OTPGenerator;
+import com.dehaat.service.SMSSender;
+import com.dehaat.service.SendOTPService;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
@@ -20,20 +24,23 @@ public class OtpAuthenticatorForm extends OTPFormAuthenticator {
 
     private static final String TPL_CODE = "login-sms.ftl";
     public static final String SELECTED_OTP_CREDENTIAL_ID = "selectedOtpCredentialId";
+    private static final String MOBILE_NUMBER = "mobile_number";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         AuthenticatorConfigModel config = context.getAuthenticatorConfig();
         KeycloakSession session = context.getSession();
         UserModel user = context.getUser();
-        String mobileNumber = user.getFirstAttribute("mobile_number");
+        String mobileNumber = user.getFirstAttribute(MOBILE_NUMBER);
+        boolean isValidMobile = MobileNumberValidator.isValid(mobileNumber);
 
-        if (mobileNumber != null && mobileNumber.length() == 10) {
+        if (isValidMobile) {
             if (user != null && !(user.getId()).isEmpty()) {
 
                 int ttl = Integer.parseInt(config.getConfig().get("ttl"));
                 int length = Integer.parseInt(config.getConfig().get("length"));
                 String senderServiceURL = config.getConfig().get("SenderServiceURL");
+                String token = config.getConfig().get("token");
 
                 OTPCredentialModel defaultOtpCredential = getCredentialProvider(session)
                         .getDefaultCredential(context.getSession(), context.getRealm(), context.getUser());
@@ -41,16 +48,12 @@ public class OtpAuthenticatorForm extends OTPFormAuthenticator {
                 context.getEvent().detail(Details.SELECTED_CREDENTIAL_ID, credentialId);
                 context.form().setAttribute(SELECTED_OTP_CREDENTIAL_ID, credentialId);
 
-
-                TimeBasedOTP timeBasedOTP = new TimeBasedOTP("HmacSHA1", length, ttl, 1);
-                String code = timeBasedOTP.generateTOTP(defaultOtpCredential.getSecretData());
-                System.out.println(code);
-
                 try {
-
-                    /*** createMailManRequest(senderServiceURL, mobileNumber, code, ttl); ***/
-
-                    boolean isMailSent = MailManService.createMailManRequest(senderServiceURL, mobileNumber, code, ttl);
+                    OTPGenerator otpGenerator = new GenerateOTPService(session, user, "HmacSHA1", length, ttl, 1);
+                    String otp = otpGenerator.createOTP();
+                    System.out.println(otp);
+                    SMSSender sender = new SendOTPService(senderServiceURL, mobileNumber, otp, ttl, token);
+                    boolean isMailSent = sender.send();
                     if (isMailSent)
                         context.challenge(context.form().setAttribute("realm", context.getRealm()).createForm(TPL_CODE));
                     else

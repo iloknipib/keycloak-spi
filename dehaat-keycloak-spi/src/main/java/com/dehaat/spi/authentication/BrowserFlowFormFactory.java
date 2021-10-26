@@ -10,7 +10,7 @@ import org.keycloak.models.KeycloakSession;
  **/
 public class BrowserFlowFormFactory extends UsernamePasswordFormFactory {
 
-    public static final String PROVIDER_ID = "dehaat-browser-authenticator";
+    public static final String PROVIDER_ID = "browser-authenticator";
     public static final BrowserFlowForm SINGLETON = new BrowserFlowForm();
 
     @Override
@@ -29,7 +29,7 @@ public class BrowserFlowFormFactory extends UsernamePasswordFormFactory {
 
     @Override
     public String getDisplayType() {
-        return "Dehaat Browser Form";
+        return "Mobile OTP Browser form";
     }
 
     @Override

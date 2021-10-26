@@ -1,6 +1,6 @@
 package com.dehaat.spi.authentication;
 
-import com.dehaat.common.AuthenticationUtils;
+import com.dehaat.common.MobileNumberValidator;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
@@ -12,6 +12,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -27,6 +28,8 @@ import java.util.stream.Stream;
 public class AndroidLoginForm extends OTPFormAuthenticator {
 
     private static final String TPL_CODE = "login-android.ftl";
+    private static final String INVALID_MOBILE_ERROR = "Invalid Mobile Number";
+    private static final String MOBILE_NUMBER = "mobile_number";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -51,10 +54,11 @@ public class AndroidLoginForm extends OTPFormAuthenticator {
         context.clearUser();
         String mobileNumber = inputData.getFirst("mobile").trim();
         UserModel user = null;
-        if (mobileNumber.length() != 10) {
-            challengeMessage(context, "Invalid Mobile Number", "username");
+        boolean isValidMobile = MobileNumberValidator.isValid(mobileNumber);
+        if (!isValidMobile) {
+            challengeMessage(context, INVALID_MOBILE_ERROR, AuthenticationManager.FORM_USERNAME);
         } else {
-            Stream<UserModel> userStream = context.getSession().users().searchForUserByUserAttributeStream(context.getRealm(), "mobile_number", mobileNumber);
+            Stream<UserModel> userStream = context.getSession().users().searchForUserByUserAttributeStream(context.getRealm(), MOBILE_NUMBER, mobileNumber);
             List<UserModel> usersList = userStream.collect(Collectors.toList());
 
             /** mobile already registered **/
@@ -63,13 +67,9 @@ public class AndroidLoginForm extends OTPFormAuthenticator {
                 context.setUser(user);
                 context.success();
             } else {
-                /** create new user **/
-                user = AuthenticationUtils.createUser(inputData, context.getSession());
-                AuthenticationUtils.generateSecret(user.getId(), context.getSession());
-                user.setSingleAttribute("mobile_number",mobileNumber);
-                user.setEnabled(true);
-                context.setUser(user);
-                context.success();
+                /** raise error **/
+                Response challengeResponse = this.challenge(context, INVALID_MOBILE_ERROR, AuthenticationManager.FORM_USERNAME);
+                context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             }
         }
         return user != null && user.isEnabled();

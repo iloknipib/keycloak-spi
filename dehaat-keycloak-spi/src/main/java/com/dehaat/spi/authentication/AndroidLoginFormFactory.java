@@ -17,12 +17,12 @@ import java.util.List;
 public class AndroidLoginFormFactory implements AuthenticatorFactory {
     @Override
     public String getId() {
-        return "dehaat-android-authenticator";
+        return "android-authenticator";
     }
 
     @Override
     public String getDisplayType() {
-        return "Dehaat Android Form";
+        return "Mobile OTP Android Form";
     }
 
     @Override
@@ -60,7 +60,8 @@ public class AndroidLoginFormFactory implements AuthenticatorFactory {
                 new ProviderConfigProperty("length", "Code length", "The number of digits of the generated code.", ProviderConfigProperty.STRING_TYPE, 6),
                 new ProviderConfigProperty("ttl", "Time-to-live", "The time to live in seconds for the code to be valid.", ProviderConfigProperty.STRING_TYPE, "300"),
                 new ProviderConfigProperty("senderId", "SenderId", "The sender ID is displayed as the message sender on the receiving device.", ProviderConfigProperty.STRING_TYPE, "Keycloak"),
-                new ProviderConfigProperty("SenderServiceURL", "Sender Service URL", "url where SMS will be sent", ProviderConfigProperty.STRING_TYPE, "https://mailman.api.dehaatagri.com/sms/bulk")
+                new ProviderConfigProperty("SenderServiceURL", "Sender Service URL", "url where SMS will be sent", ProviderConfigProperty.STRING_TYPE, "https://mailman.api.dehaatagri.com/sms/bulk"),
+                new ProviderConfigProperty("token", "Sender Service Authentication token", "token for SenderServiceURL", ProviderConfigProperty.STRING_TYPE, "")
         );
     }
 

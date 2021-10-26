@@ -5,15 +5,15 @@ package com.dehaat.rest;
  **/
 public class OTPPayloadRepresentation {
 
-    private String mobile_num;
-    private String client_id;
-
-    public String getMobile_num() {
-        return mobile_num;
+    public OTPPayloadRepresentation() {
+    }
+    
+    public String getMobile_number() {
+        return mobile_number;
     }
 
-    public void setMobile_num(String mobile_num) {
-        this.mobile_num = mobile_num;
+    public void setMobile_number(String mobile_number) {
+        this.mobile_number = mobile_number;
     }
 
     public String getClient_id() {
@@ -24,6 +24,6 @@ public class OTPPayloadRepresentation {
         this.client_id = client_id;
     }
 
-    public OTPPayloadRepresentation() {
-    }
+    private String mobile_number;
+    private String client_id;
 }

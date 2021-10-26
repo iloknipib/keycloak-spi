@@ -32,7 +32,7 @@ public class UserCreationEventListenerProviderFactory implements EventListenerPr
 
     @Override
     public String getId() {
-        return "pl_event_listener";
+        return "custom_event_listener";
     }
 
 }

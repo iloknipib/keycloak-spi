@@ -10,23 +10,15 @@
                 	<label for="mobile" class="${properties.kcLabelClass!}">${msg("mobileLabel")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                	<input type="text" id="mobile" name="mobile" class="${properties.kcInputClass!}" />
+                	<input type="text" id="username" name="username" class="${properties.kcInputClass!}" />
                 </div>
 
-				<div class="${properties.kcLabelWrapperClass!}">
-					<label for="code" class="${properties.kcLabelClass!}">${msg("smsAuthLabel")}</label>
-				</div>
-				<div class="${properties.kcInputWrapperClass!}">
-					<input type="text" id="code" name="otp" class="${properties.kcInputClass!}" />
-				</div>
 			</div>
 			<div class="${properties.kcFormGroupClass!} ${properties.kcFormSettingClass!}">
 				<div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-					<input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" id="submit-android-btn" type="submit" value="${msg("doSubmit")}"/>
+					<input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" id="submit-browser-btn" type="submit" value="${msg("doSubmit")}"/>
 				</div>
 			</div>
 		</form>
-	<#elseif section = "info" >
-		${msg("smsAuthInstruction")}
 	</#if>
 </@layout.registrationLayout>

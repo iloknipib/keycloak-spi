@@ -1,6 +1,7 @@
 package com.dehaat.spi.authentication;
 
 import com.dehaat.common.AuthenticationUtils;
+import com.dehaat.common.MobileNumberValidator;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -18,7 +19,26 @@ import java.util.stream.Stream;
  * @author sushil
  */
 public class BrowserFlowForm extends UsernamePasswordForm {
+    private static final String TPL_CODE = "login-browser.ftl";
+    private static final String INVALID_MOBILE_ERROR = "Invalid Mobile Number";
+    private static final String MOBILE_NUMBER = "mobile_number";
+
     public BrowserFlowForm() {
+    }
+
+    @Override
+    public void authenticate(AuthenticationFlowContext context) {
+        context.challenge(context.form().setAttribute("realm", context.getRealm()).createForm(TPL_CODE));
+    }
+
+    @Override
+    public void action(AuthenticationFlowContext context) {
+        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        if (formData.containsKey("cancel")) {
+            context.cancelLogin();
+        } else if (this.validateForm(context, formData)) {
+            context.success();
+        }
     }
 
     protected boolean validateForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
@@ -30,11 +50,12 @@ public class BrowserFlowForm extends UsernamePasswordForm {
         context.clearUser();
         String mobileNumber = inputData.getFirst(AuthenticationManager.FORM_USERNAME).trim();
         UserModel user = null;
-        if (mobileNumber.length() != 10) {
-            context.challenge(challengeMessage(context, "Invalid Mobile Number", "username"));
+        boolean isValidMobile = MobileNumberValidator.isValid(mobileNumber);
+        if (!isValidMobile) {
+            context.challenge(challengeMessage(context, INVALID_MOBILE_ERROR, AuthenticationManager.FORM_USERNAME));
 
         } else {
-            Stream<UserModel> userStream = context.getSession().users().searchForUserByUserAttributeStream(context.getRealm(), "mobile_number", mobileNumber);
+            Stream<UserModel> userStream = context.getSession().users().searchForUserByUserAttributeStream(context.getRealm(), MOBILE_NUMBER, mobileNumber);
             List<UserModel> usersList = userStream.collect(Collectors.toList());
 
             /** mobile already registered **/
@@ -46,7 +67,7 @@ public class BrowserFlowForm extends UsernamePasswordForm {
                 /** create new user **/
                 user = AuthenticationUtils.createUser(inputData, context.getSession());
                 AuthenticationUtils.generateSecret(user.getId(), context.getSession());
-                user.setSingleAttribute("mobile_number", mobileNumber);
+                user.setSingleAttribute(MOBILE_NUMBER, mobileNumber);
                 user.setEnabled(true);
                 context.setUser(user);
                 context.success();
@@ -65,10 +86,6 @@ public class BrowserFlowForm extends UsernamePasswordForm {
         return forms.createLoginUsername();
     }
 
-    protected Response createLoginForm(LoginFormsProvider form) {
-        return form.createLoginUsername();
-    }
-
     protected Response challengeMessage(AuthenticationFlowContext context, String error, String field) {
 
         LoginFormsProvider form = context.form().setExecution(context.getExecution().getId());
@@ -80,7 +97,11 @@ public class BrowserFlowForm extends UsernamePasswordForm {
             }
         }
 
-        return form.createLoginUsername();
+        return form.createForm(TPL_CODE);
+    }
+
+    protected Response createLoginForm(LoginFormsProvider form) {
+        return form.createForm(TPL_CODE);
     }
 
 }
