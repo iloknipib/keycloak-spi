@@ -7,4 +7,7 @@ RUN mvn -f /home/app/pom.xml clean package
 FROM jboss/keycloak:15.0.1
 LABEL maintainer="Subhash Samota <subhash.samota@agrevolution.in>"
 COPY --from=build /home/app/target/dehaat-keycloak-spi-1.0.jar /opt/jboss/keycloak/
-COPY docker/deploy.cli /opt/jboss/extensions/deploy.cli
+COPY docker/deploy.cli /opt/jboss/startup-scripts/deploy.cli
+USER root
+RUN chmod +x /opt/jboss/startup-scripts/deploy.cli
+USER 1000
