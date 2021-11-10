@@ -1,0 +1,4 @@
+batch
+    module add --name=com.dehaat --resources=/opt/jboss/keycloak/dehaat-keycloak-spi-1.0.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-services,org.keycloak.keycloak-model-jpa,org.keycloak.keycloak-server-spi,org.keycloak.keycloak-server-spi-private,javax.ws.rs.api,javax.persistence.api,org.hibernate,org.javassist,org.liquibase
+ /subsystem=keycloak-server:list-add(name=providers, value=module:com.dehaat)
+run-batch
