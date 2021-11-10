@@ -1,4 +1,4 @@
-name: Deploy Dev
+name: Deploy Feature
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-push:
-    environment: dev
+    environment: feature
     runs-on: ubuntu-20.04
     steps:
 
@@ -16,7 +16,7 @@ jobs:
         id: slack
         with:
           channel_id: C02M0AYDRQ9
-          status: BUILD-STARTED (dev)
+          status: BUILD-STARTED (feature)
           color: warning
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -54,7 +54,7 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: true
-          tags: "895498447357.dkr.ecr.ap-south-1.amazonaws.com/keycloak:dev-${{ env.GITHUB_SHA_MERGE }}"
+          tags: "895498447357.dkr.ecr.ap-south-1.amazonaws.com/keycloak:feature-${{ env.GITHUB_SHA_MERGE }}"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -83,7 +83,7 @@ jobs:
         with:
           channel_id: C02M0AYDRQ9
           message_id: ${{ steps.slack.outputs.message_id }}
-          status: BUILD-SUCCESS (dev)
+          status: BUILD-SUCCESS (feature)
           color: warning
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -94,14 +94,14 @@ jobs:
         with:
           channel_id: C02M0AYDRQ9
           message_id: ${{ steps.slack.outputs.message_id }}
-          status: BUILD-FAILED (dev)
+          status: BUILD-FAILED (feature)
           color: danger
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
   deploy:
     needs: [ build-and-push ]
-    environment: dev
+    environment: feature
     runs-on: ubuntu-20.04
     steps:
 
@@ -119,7 +119,7 @@ jobs:
         with:
           channel_id: C02M0AYDRQ9
           message_id: ${{ steps.slack.outputs.message_id }}
-          status: DEPLOY-STARTED (dev)
+          status: DEPLOY-STARTED (feature)
           color: warning
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -154,7 +154,7 @@ jobs:
         run: |
           cat ~/.vault_pass.txt
           cd ansible/playbooks
-          ansible-playbook keycloak.yml --vault-password-file ~/.vault_pass.txt -e image_tag=$(echo dev-${{ env.GITHUB_SHA_MERGE }} ) -e "deploy_env=dev" -v
+          ansible-playbook keycloak.yml --vault-password-file ~/.vault_pass.txt -e image_tag=$(echo feature-${{ env.GITHUB_SHA_MERGE }} ) -e "deploy_env=feature" -v
 
       - name: Notify slack success
         if: success()
@@ -162,7 +162,7 @@ jobs:
         with:
           channel_id: C02M0AYDRQ9
           message_id: ${{ steps.slack.outputs.message_id }}
-          status: DEPLOY-SUCCESS (dev)
+          status: DEPLOY-SUCCESS (feature)
           color: good
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -173,7 +173,7 @@ jobs:
         with:
           channel_id: C02M0AYDRQ9
           message_id: ${{ steps.slack.outputs.message_id }}
-          status: DEPLOY-FAILED (dev)
+          status: DEPLOY-FAILED (feature)
           color: danger
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
