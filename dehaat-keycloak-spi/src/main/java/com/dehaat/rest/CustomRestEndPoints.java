@@ -2,7 +2,7 @@ package com.dehaat.rest;
 
 import com.dehaat.common.AuthenticationUtils;
 import com.dehaat.common.MobileNumberValidator;
-import com.dehaat.service.GenerateOTPService;
+import com.dehaat.service.OTPGeneratorService;
 import com.dehaat.service.OTPGenerator;
 import com.dehaat.service.SMSSender;
 import com.dehaat.service.SendOTPService;
@@ -91,14 +91,11 @@ public class CustomRestEndPoints {
             // get config details from server
             AuthenticatorConfigModel config = session.getContext().getRealm().getAuthenticatorConfigByAlias("mobile_otp_config");
             int ttl = Integer.parseInt(config.getConfig().get("ttl"));
-            int length = Integer.parseInt(config.getConfig().get("length"));
-            String senderServiceURL = config.getConfig().get("SenderServiceURL");
-            String token = config.getConfig().get("token");
+            String mobileNumber = user.getFirstAttribute(MOBILE);
 
-            OTPGenerator otpGenerator = new GenerateOTPService(session, user, "HmacSHA1", length, ttl, 1);
+            OTPGenerator otpGenerator = new OTPGeneratorService(session, user);
             String otp = otpGenerator.createOTP();
-            System.out.println(otp);
-            SMSSender sender = new SendOTPService(senderServiceURL, user.getFirstAttribute(MOBILE), otp, ttl, token);
+            SMSSender sender = new SendOTPService(mobileNumber, otp, ttl, client_id);
             boolean isMailSent = sender.send();
             if (isMailSent) {
                 // 200 on success
@@ -111,10 +108,10 @@ public class CustomRestEndPoints {
 
     @GET
     @NoCache
-    @Path("userbymobile")
+    @Path("users")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserRepresentation> getUserByMobileNumber(@QueryParam(MOBILE) String mobileNumber) {
-        if(auth==null){
+    public List<UserRepresentation> getUserByQuery(@QueryParam(MOBILE) String mobileNumber) {
+        if (auth == null) {
             throw new NotAuthorizedException("Admin token is not provided");
         }
         AccessToken token = auth.getToken();
@@ -140,23 +137,23 @@ public class CustomRestEndPoints {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createUser(UserRepresentation userRepresentation) {
-        if(auth==null){
+        if (auth == null) {
             throw new NotAuthorizedException("Admin token is not provided");
         }
         AccessToken token = auth.getToken();
         AdminAuth auth = authenticateRealmAdminRequest(token);
         RealmModel realm = auth.getRealm();
 
-        boolean isEmptyEmail = userRepresentation.getEmail()==null ? true:false;
+        boolean isEmptyEmail = userRepresentation.getEmail() == null ? true : false;
         boolean isValidMobile = false;
 
         Map<String, List<String>> userAttributes = userRepresentation.getAttributes();
-        List<String> mobileNumberList=null;
-        if(userAttributes!=null) {
+        List<String> mobileNumberList = null;
+        if (userAttributes != null) {
             mobileNumberList = userAttributes.get(MOBILE);
         }
 
-        if (mobileNumberList!=null && mobileNumberList.size() > 0) {
+        if (mobileNumberList != null && mobileNumberList.size() > 0) {
             String mobileNumber = mobileNumberList.get(0);
             isValidMobile = MobileNumberValidator.isValid(mobileNumber);
             if (!isValidMobile) {
@@ -166,7 +163,7 @@ public class CustomRestEndPoints {
 
         /** check occurance of atleast one mandatory parameter [email or mobile_number] **/
         if (isEmptyEmail && !isValidMobile) {
-            return ErrorResponse.error("email or mobile number missing/invalid", Response.Status.BAD_REQUEST);
+            return ErrorResponse.error(ERR_EMPTY_EMAIL_OR_MOBILE, Response.Status.BAD_REQUEST);
         }
 
         AdminPermissionEvaluator realmAuth = AdminPermissions.evaluator(session, realm, auth);

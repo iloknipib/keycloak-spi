@@ -41,7 +41,8 @@ public class UserCreationEventListenerProvider implements EventListenerProvider 
         /** create secret for totp when event type is user creation from admin/admin-api **/
         if (ResourceType.USER.equals(adminEvent.getResourceType())
                 && OperationType.CREATE.equals(adminEvent.getOperationType())) {
-            String userID = adminEvent.getResourcePath().replaceAll("users", "").replaceAll("/", "");
+            String resources [] = adminEvent.getResourcePath().split("/");
+            String userID = resources[resources.length-1];
             AuthenticationUtils.generateSecret(userID, session);
         }
     }

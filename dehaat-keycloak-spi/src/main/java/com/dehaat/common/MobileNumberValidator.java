@@ -3,6 +3,9 @@ package com.dehaat.common;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * @author sushil
+ */
 public class MobileNumberValidator {
     private final static String PHONE_REGEX = "^[7-9][0-9]{9}$";
 

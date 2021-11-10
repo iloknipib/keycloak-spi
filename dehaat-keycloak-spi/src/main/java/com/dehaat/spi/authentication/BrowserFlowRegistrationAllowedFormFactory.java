@@ -8,10 +8,10 @@ import org.keycloak.models.KeycloakSession;
 /**
  * @author sushil
  **/
-public class BrowserFlowFormFactory extends UsernamePasswordFormFactory {
+public class BrowserFlowRegistrationAllowedFormFactory extends UsernamePasswordFormFactory {
 
-    public static final String PROVIDER_ID = "browser-authenticator";
-    public static final BrowserFlowForm SINGLETON = new BrowserFlowForm();
+    public static final String PROVIDER_ID = "browser-auth-registration";
+    public static final BrowserFlowRegistrationAllowedForm SINGLETON = new BrowserFlowRegistrationAllowedForm();
 
     @Override
     public Authenticator create(KeycloakSession session) {
@@ -29,7 +29,7 @@ public class BrowserFlowFormFactory extends UsernamePasswordFormFactory {
 
     @Override
     public String getDisplayType() {
-        return "Mobile OTP Browser form";
+        return "Mobile OTP Browser form (Registration Allowed)";
     }
 
     @Override
