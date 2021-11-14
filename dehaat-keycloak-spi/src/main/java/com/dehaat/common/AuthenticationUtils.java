@@ -1,6 +1,7 @@
 package com.dehaat.common;
 
 import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.OTPCredentialProvider;
 import org.keycloak.credential.PasswordCredentialProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -27,8 +28,6 @@ public class AuthenticationUtils {
         RealmModel realm = session.getContext().getRealm();
         CredentialProvider otpCredentialProvider = session.getProvider(CredentialProvider.class, "keycloak-otp");
         OTPCredentialModel credentialModel = OTPCredentialModel.createFromPolicy(realm, HmacOTP.generateSecret(20));
-        PasswordCredentialProvider provider = (PasswordCredentialProvider) session.getProvider(CredentialProvider.class, "keycloak-password");
-        provider.createCredential(realm, user, "");
         otpCredentialProvider.createCredential(realm, user, credentialModel);
     }
 
@@ -39,5 +38,9 @@ public class AuthenticationUtils {
         UserProfile profile = profileProvider.create(UserProfileContext.REGISTRATION_USER_CREATION, inputData);
         UserModel user = profile.create();
         return user;
+    }
+
+    public static OTPCredentialProvider getCredentialProvider(KeycloakSession session) {
+        return (OTPCredentialProvider) session.getProvider(CredentialProvider.class, "keycloak-otp");
     }
 }

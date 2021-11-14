@@ -18,13 +18,10 @@ import java.util.stream.Stream;
 /**
  * @author sushil
  */
-public class BrowserFlowForm extends UsernamePasswordForm {
+public class BrowserFlowRegistrationAllowedForm extends UsernamePasswordForm {
     private static final String TPL_CODE = "login-browser.ftl";
     private static final String INVALID_MOBILE_ERROR = "Invalid Mobile Number";
     private static final String MOBILE_NUMBER = "mobile_number";
-
-    public BrowserFlowForm() {
-    }
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
