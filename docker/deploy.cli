@@ -1,7 +1,7 @@
 embed-server --std-out=echo  --server-config=standalone-ha.xml
 if (outcome != success) of /core-service=module-loading/:list-resource-loader-paths(module=com.dehaat)
     echo adding module com.dehaat
-    module add --name=com.dehaat --resources=/opt/jboss/keycloak/dehaat-keycloak-spi-1.0.jar --dependencies=com.fasterxml.jackson.core.jackson-core,org.keycloak.keycloak-core,org.keycloak.keycloak-services,org.keycloak.keycloak-model-jpa,org.keycloak.keycloak-server-spi,org.keycloak.keycloak-server-spi-private,org.hibernate,org.javassist,org.liquibase,org.apache.httpcomponents.core,org.apache.commons.logging,org.jboss.logging,org.jboss.resteasy,javax.ws.rs.api,javax.persistence.api,javax.api
+    module add --name=com.dehaat --resources=/opt/jboss/keycloak/dehaat-keycloak-spi-1.0.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-services,org.keycloak.keycloak-model-jpa,org.keycloak.keycloak-server-spi,org.keycloak.keycloak-server-spi-private,javax.ws.rs.api,javax.persistence.api,org.hibernate,org.javassist,org.liquibase,org.jboss.logging
     /subsystem=keycloak-server:list-add(name=providers, value=module:com.dehaat)
 else
     echo module com.dehaat already installed
