@@ -58,14 +58,6 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
         
-      - name: Build init container image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: docker/init.Dockerfile
-          push: true
-          tags: "895498447357.dkr.ecr.ap-south-1.amazonaws.com/keycloak:feature-init-container"
-
         # Temp fix
         # https://github.com/docker/build-push-action/issues/252
         # https://github.com/moby/buildkit/issues/1896
