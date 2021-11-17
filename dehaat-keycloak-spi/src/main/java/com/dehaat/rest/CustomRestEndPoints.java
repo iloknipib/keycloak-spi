@@ -44,6 +44,7 @@ public class CustomRestEndPoints {
     private static final String MOBILE = "mobile_number";
     private static final String ERR_INVALID_MOBILE = "Invalid Mobile Number";
     private static final String ERR_EMPTY_EMAIL_OR_MOBILE = "Email or Mobile Number missing/invalid";
+    private static final String ERR_EMPTY_MOBILE = "mobile_number is missing";
 
     public CustomRestEndPoints(KeycloakSession session) {
         this.session = session;
@@ -128,7 +129,7 @@ public class CustomRestEndPoints {
         }
 
         if (mobileNumber == null) {
-            throw new ClientErrorException(ERR_INVALID_MOBILE, Response.Status.BAD_REQUEST);
+            throw new ClientErrorException(ERR_EMPTY_MOBILE, Response.Status.BAD_REQUEST);
         }
 
         boolean isValidMobile = MobileNumberValidator.isValid(mobileNumber);
