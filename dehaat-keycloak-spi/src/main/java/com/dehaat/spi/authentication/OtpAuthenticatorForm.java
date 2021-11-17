@@ -61,8 +61,12 @@ public class OtpAuthenticatorForm extends OTPFormAuthenticator {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         String otp = inputData.getFirst("otp");
 
+        if (otp != null && !otp.isEmpty()) {
+            otp = otp.trim();
+        }
+
         UserModel userModel = context.getUser();
-        boolean valid=false;
+        boolean valid;
 
         if (this.enabledUser(context, userModel)) {
             if (otp == null) {
@@ -73,17 +77,17 @@ public class OtpAuthenticatorForm extends OTPFormAuthenticator {
                 if (!isProdEnv) {
                     if (otp.equals("123456")) {
                         context.success();
-                        valid=true;
-                    }
-                } else {
-                    OTPValidator otpValidator = new OTPValidatorService(context);
-                    valid = otpValidator.isValid(otp);
-                    if (valid) {
-                        context.success();
+                        return;
                     }
                 }
 
-                if(!valid) {
+                OTPValidator otpValidator = new OTPValidatorService(context);
+                valid = otpValidator.isValid(otp);
+                if (valid) {
+                    context.success();
+                }
+
+                if (!valid) {
                     context.getEvent().user(userModel).error("invalid_user_credentials");
                     Response challengeResponse = this.challenge(context, "invalidTotpMessage", "totp");
                     context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);

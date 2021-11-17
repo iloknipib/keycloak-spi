@@ -2,3 +2,4 @@ com.dehaat.spi.authentication.BrowserFlowRegistrationAllowedFormFactory
 com.dehaat.spi.authentication.BrowserFlowRegistrationNotAllowedFormFactory
 com.dehaat.spi.authentication.OtpAuthenticatorFormFactory
 com.dehaat.spi.authentication.AndroidLoginFormFactory
+com.dehaat.spi.authentication.VerifyEmailFormFactory
