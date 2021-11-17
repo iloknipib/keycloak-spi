@@ -16,6 +16,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
@@ -118,7 +119,20 @@ public class CustomRestEndPoints {
         AdminAuth auth = authenticateRealmAdminRequest(token);
         RealmModel realm = auth.getRealm();
 
+        AdminPermissionEvaluator realmAuth = AdminPermissions.evaluator(session, realm, auth);
+
+        try {
+            realmAuth.users().requireQuery();
+        } catch (ForbiddenException var11) {
+            throw var11;
+        }
+
+        if (mobileNumber == null) {
+            throw new ClientErrorException(ERR_INVALID_MOBILE, Response.Status.BAD_REQUEST);
+        }
+
         boolean isValidMobile = MobileNumberValidator.isValid(mobileNumber);
+
         if (!isValidMobile) {
             throw new ClientErrorException(ERR_INVALID_MOBILE, Response.Status.BAD_REQUEST);
         }
@@ -144,6 +158,14 @@ public class CustomRestEndPoints {
         AdminAuth auth = authenticateRealmAdminRequest(token);
         RealmModel realm = auth.getRealm();
 
+        AdminPermissionEvaluator realmAuth = AdminPermissions.evaluator(session, realm, auth);
+
+        try {
+            realmAuth.users().requireManage();
+        } catch (ForbiddenException var11) {
+            throw var11;
+        }
+
         boolean isEmptyEmail = userRepresentation.getEmail() == null ? true : false;
         boolean isValidMobile = false;
 
@@ -166,7 +188,6 @@ public class CustomRestEndPoints {
             return ErrorResponse.error(ERR_EMPTY_EMAIL_OR_MOBILE, Response.Status.BAD_REQUEST);
         }
 
-        AdminPermissionEvaluator realmAuth = AdminPermissions.evaluator(session, realm, auth);
         AdminEventBuilder adminEvent = new AdminEventBuilder(realm, auth, session, session.getContext().getConnection());
         String username;
         username = userRepresentation.getUsername();

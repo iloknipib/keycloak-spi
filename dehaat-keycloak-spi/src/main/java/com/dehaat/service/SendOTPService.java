@@ -1,6 +1,5 @@
 package com.dehaat.service;
 
-import com.dehaat.common.Helper;
 import com.dehaat.config.ConfigLoader;
 import com.dehaat.config.ConfigProperties;
 import com.fasterxml.jackson.core.JsonGenerationException;
@@ -21,10 +20,8 @@ import java.util.*;
  **/
 public class SendOTPService implements SMSSender {
 
-    private String url;
     private String mobileNumber;
     private String otp;
-    private String token;
     private int ttl;
     private String clientId;
 
@@ -36,27 +33,15 @@ public class SendOTPService implements SMSSender {
     }
 
     public boolean send() {
-        boolean isProdEnv = Helper.isProdEnv();
-        if (!isProdEnv) {
-            // do nothing in case of dev environment
-            return true;
-        } else {
-            boolean isOTPsent = createMailManRequest(mobileNumber, otp, ttl, clientId);
-            return isOTPsent;
-        }
+        boolean isOTPsent = createMailManRequest(mobileNumber, otp, ttl, clientId);
+        return isOTPsent;
     }
 
     public static boolean createMailManRequest(String mobileNumber, String otp, int ttl, String clientId) {
         Map<String, Object> payload = new HashMap<>();
         String template = "auth_otp_v1";
         String hashcode = "";
-        Properties prop = null;
-
-        try {
-            prop = ConfigLoader.getProp();
-        } catch (Exception ex) {
-
-        }
+        Properties prop = ConfigLoader.getProp();
 
         String token = prop.getProperty(ConfigProperties.MAILMAN_SEND_TOKEN.name());
         String url = prop.getProperty(ConfigProperties.MAILMAN_HOST.name());

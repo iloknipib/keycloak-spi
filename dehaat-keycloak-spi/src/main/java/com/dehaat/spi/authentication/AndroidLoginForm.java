@@ -75,7 +75,11 @@ public class AndroidLoginForm extends OTPFormAuthenticator {
     }
 
     public boolean validateOTP(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
-        String otp = inputData.getFirst("otp").trim();
+        String otp = inputData.getFirst("otp");
+        if (otp != null && !otp.isEmpty()) {
+            otp = otp.trim();
+        }
+
         UserModel userModel = context.getUser();
         if (this.enabledUser(context, userModel)) {
             if (otp == null) {
@@ -87,12 +91,11 @@ public class AndroidLoginForm extends OTPFormAuthenticator {
                     if (otp.equals("123456")) {
                         return true;
                     }
-                } else {
-                    OTPValidator otpValidator = new OTPValidatorService(context);
-                    boolean valid = otpValidator.isValid(otp);
-                    if (valid) {
-                        return true;
-                    }
+                }
+                OTPValidator otpValidator = new OTPValidatorService(context);
+                boolean valid = otpValidator.isValid(otp);
+                if (valid) {
+                    return true;
                 }
                 context.getEvent().user(userModel).error("invalid_user_credentials");
                 Response challengeResponse = this.challenge(context, "invalidTotpMessage", "totp");
