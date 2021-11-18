@@ -78,7 +78,6 @@ public class SendOTPService implements SMSSender {
         try {
             //Convert Map to JSON
             String json = mapper.writeValueAsString(payload);
-            System.out.println(json);
             StringEntity requestEntity = new StringEntity(json);
 
 

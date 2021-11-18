@@ -45,6 +45,8 @@ public class CustomRestEndPoints {
     private static final String ERR_INVALID_MOBILE = "Invalid Mobile Number";
     private static final String ERR_EMPTY_EMAIL_OR_MOBILE = "Email or Mobile Number missing/invalid";
     private static final String ERR_EMPTY_MOBILE = "mobile_number is missing";
+    private static final String SENT_SMS_MOBILE_SUCCESS = "sms service successfully sent otp";
+    private static final String SENT_SMS_MOBILE_FAIL = "sms service failed to send otp";
 
     public CustomRestEndPoints(KeycloakSession session) {
         this.session = session;
@@ -53,7 +55,6 @@ public class CustomRestEndPoints {
 
     @POST
     @Path("sendOTP")
-    @Produces(MediaType.APPLICATION_JSON)
     public Response sendOTP(OTPPayloadRepresentation rep) {
         String mobile_number = rep.getMobile_number();
         String client_id = rep.getClient_id();
@@ -94,18 +95,23 @@ public class CustomRestEndPoints {
             AuthenticatorConfigModel config = session.getContext().getRealm().getAuthenticatorConfigByAlias("mobile_otp_config");
             int ttl = Integer.parseInt(config.getConfig().get("ttl"));
             String mobileNumber = user.getFirstAttribute(MOBILE);
+            String otp;
 
             OTPGenerator otpGenerator = new OTPGeneratorService(session, user);
-            String otp = otpGenerator.createOTP();
+            try {
+                otp = otpGenerator.createOTP();
+            }catch (Exception ex){
+                return Response.serverError().entity(ex.getMessage()).build();
+            }
             SMSSender sender = new SendOTPService(mobileNumber, otp, ttl, client_id);
             boolean isMailSent = sender.send();
             if (isMailSent) {
                 // 200 on success
-                return Response.ok().type(MediaType.APPLICATION_JSON).build();
+                return Response.ok().entity(SENT_SMS_MOBILE_SUCCESS).build();
             }
         }
         // 500 on failure
-        return Response.serverError().type(MediaType.APPLICATION_JSON).build();
+        return Response.serverError().entity(SENT_SMS_MOBILE_FAIL).build();
     }
 
     @GET

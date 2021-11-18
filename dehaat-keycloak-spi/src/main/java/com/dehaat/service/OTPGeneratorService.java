@@ -23,10 +23,14 @@ public class OTPGeneratorService implements OTPGenerator {
     }
 
     @Override
-    public String createOTP() {
+    public String createOTP() throws Exception{
         TimeBasedOTP timeBasedOTP = new TimeBasedOTP(algo, length, ttl, lookAheadWindow);
-        String otp = timeBasedOTP.generateTOTP(OtpCredential.getSecretData());
-        return otp;
+        try {
+            String otp = timeBasedOTP.generateTOTP(OtpCredential.getSecretData());
+            return otp;
+        }catch (Exception ex){
+            throw new Exception("Otp credentials not set for user");
+        }
     }
 
     private void init(KeycloakSession session, UserModel user) {

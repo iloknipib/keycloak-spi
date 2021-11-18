@@ -18,6 +18,7 @@ public class OtpAuthenticatorForm extends OTPFormAuthenticator {
 
     private static final String TPL_CODE = "login-sms.ftl";
     private static final String MOBILE_NUMBER = "mobile_number";
+    private static final String SENT_SMS_MOBILE_FAIL = "sms service failed to send otp";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -41,7 +42,7 @@ public class OtpAuthenticatorForm extends OTPFormAuthenticator {
                     if (isMailSent)
                         context.challenge(context.form().setAttribute("realm", context.getRealm()).createForm(TPL_CODE));
                     else
-                        throw new Exception();
+                        throw new Exception(SENT_SMS_MOBILE_FAIL);
                 } catch (Exception e) {
                     context.failureChallenge(AuthenticationFlowError.INTERNAL_ERROR,
                             context.form().setError("smsAuthSmsNotSent", e.getMessage())
