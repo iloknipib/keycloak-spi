@@ -93,9 +93,16 @@ public class AndroidLoginForm extends OTPFormAuthenticator {
                     }
                 }
                 OTPValidator otpValidator = new OTPValidatorService(context);
-                boolean valid = otpValidator.isValid(otp);
-                if (valid) {
-                    return true;
+                try {
+                    boolean valid = otpValidator.isValid(otp);
+                    if (valid) {
+                        return true;
+                    }
+                }catch (Exception e) {
+                    context.getEvent().user(userModel).error(e.getMessage());
+                    Response challengeResponse = this.challenge(context, "invalidOtpCredentials", "totp");
+                    context.failureChallenge(AuthenticationFlowError.CREDENTIAL_SETUP_REQUIRED, challengeResponse);
+                    return false;
                 }
                 context.getEvent().user(userModel).error("invalid_user_credentials");
                 Response challengeResponse = this.challenge(context, "invalidTotpMessage", "totp");

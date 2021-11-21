@@ -22,11 +22,15 @@ public class OTPValidatorService implements OTPValidator{
     }
 
     @Override
-    public boolean isValid(String otp) {
+    public boolean isValid(String otp) throws Exception{
         TimeBasedOTP timeBasedOTP = new TimeBasedOTP("HmacSHA1", length, ttl, 1);
-        String secretData = OtpCredential.getSecretData();
-        boolean valid = timeBasedOTP.validateTOTP(otp, secretData.getBytes(StandardCharsets.UTF_8));
-        return valid;
+        try {
+            String secretData = OtpCredential.getSecretData();
+            boolean valid = timeBasedOTP.validateTOTP(otp, secretData.getBytes(StandardCharsets.UTF_8));
+            return valid;
+        }catch (Exception ex){
+            throw new Exception("Otp credentials not set for user");
+        }
     }
 
     private void init(AuthenticationFlowContext context){

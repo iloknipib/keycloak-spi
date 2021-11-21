@@ -83,15 +83,19 @@ public class OtpAuthenticatorForm extends OTPFormAuthenticator {
                 }
 
                 OTPValidator otpValidator = new OTPValidatorService(context);
-                valid = otpValidator.isValid(otp);
-                if (valid) {
-                    context.success();
-                }
-
-                if (!valid) {
-                    context.getEvent().user(userModel).error("invalid_user_credentials");
-                    Response challengeResponse = this.challenge(context, "invalidTotpMessage", "totp");
-                    context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
+                try {
+                    valid = otpValidator.isValid(otp);
+                    if (valid) {
+                        context.success();
+                    }else{
+                        context.getEvent().user(userModel).error("invalid_user_credentials");
+                        Response challengeResponse = this.challenge(context, "invalidTotpMessage", "totp");
+                        context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
+                    }
+                } catch (Exception e) {
+                    context.getEvent().user(userModel).error(e.getMessage());
+                    Response challengeResponse = this.challenge(context, "invalidOtpCredentials", "totp");
+                    context.failureChallenge(AuthenticationFlowError.CREDENTIAL_SETUP_REQUIRED, challengeResponse);
                 }
             }
         }
