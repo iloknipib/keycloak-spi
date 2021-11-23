@@ -1,12 +1,17 @@
 package com.dehaat.spi.authentication;
 
 import com.dehaat.common.AuthenticationUtils;
+import com.dehaat.common.Helper;
 import com.dehaat.common.MobileNumberValidator;
+import org.json.JSONObject;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -68,6 +73,12 @@ public class BrowserFlowRegistrationAllowedForm extends UsernamePasswordForm {
                 user.setEnabled(true);
                 context.setUser(user);
                 context.success();
+
+                /** send message to the messaging queue ***/
+                UserRepresentation userRepresentation = ModelToRepresentation.toRepresentation(context.getSession(), context.getRealm(), user);
+                JSONObject jsonObj = new JSONObject(userRepresentation);
+                JSONObject message = Helper.setMessageQueueData(OperationType.CREATE.name(), jsonObj);
+                Helper.getMessagingQueueService().send(message);
             }
         }
         return user != null && user.isEnabled();
