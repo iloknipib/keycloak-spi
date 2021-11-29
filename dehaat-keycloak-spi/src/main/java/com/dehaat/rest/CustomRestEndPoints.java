@@ -1,6 +1,7 @@
 package com.dehaat.rest;
 
 import com.dehaat.common.AuthenticationUtils;
+import com.dehaat.common.Helper;
 import com.dehaat.common.MobileNumberValidator;
 import com.dehaat.service.OTPGeneratorService;
 import com.dehaat.service.OTPGenerator;
@@ -10,6 +11,8 @@ import com.dehaat.service.SendOTPService;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.json.JSONObject;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -87,6 +90,11 @@ public class CustomRestEndPoints {
             AuthenticationUtils.generateSecret(user.getId(), session);
             user.setSingleAttribute(MOBILE, mobile_number);
             user.setEnabled(true);
+
+            UserRepresentation userRepresentation = ModelToRepresentation.toRepresentation(session, session.getContext().getRealm(), user);
+            JSONObject jsonObj = new JSONObject(userRepresentation);
+            JSONObject message = Helper.setMessageQueueData(OperationType.CREATE.name(), jsonObj);
+            Helper.getMessagingQueueService().send(message);
         }
 
         if (user != null && user.isEnabled()) {
@@ -100,7 +108,7 @@ public class CustomRestEndPoints {
             OTPGenerator otpGenerator = new OTPGeneratorService(session, user);
             try {
                 otp = otpGenerator.createOTP();
-            }catch (Exception ex){
+            } catch (Exception ex) {
                 return Response.serverError().entity(ex.getMessage()).build();
             }
             SMSSender sender = new SendOTPService(mobileNumber, otp, ttl, client_id);
