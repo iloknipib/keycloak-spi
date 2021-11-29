@@ -14,8 +14,6 @@ public class MessagingQueueService implements MessagingQueue {
     private Channel channel = null;
     private final static String RABBITMQ_CONNECT_URL = ConfigLoader.getProp().getProperty(ConfigProperties.RABBITMQ_CONNECT_URL.name());
     private final static String RABBITMQ_EXCHANGE = ConfigLoader.getProp().getProperty(ConfigProperties.RABBITMQ_EXCHANGE.name());
-    private final static String RABBITMQ_KEYCLOAK_QUEUE = ConfigLoader.getProp().getProperty(ConfigProperties.RABBITMQ_KEYCLOAK_QUEUE.name());
-
 
     @Override
     public void send(JSONObject message) {
@@ -25,7 +23,7 @@ public class MessagingQueueService implements MessagingQueue {
         }
         byte[] messageBodyBytes = message.toString().getBytes();
         try {
-            channel.basicPublish(RABBITMQ_EXCHANGE, RABBITMQ_KEYCLOAK_QUEUE, null, messageBodyBytes);
+            channel.basicPublish(RABBITMQ_EXCHANGE, "", null, messageBodyBytes);
         } catch (IOException ex) {
             System.out.println("Error: Error while publishing data to MessagingQueue");
         }

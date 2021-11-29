@@ -23,7 +23,6 @@ public class ConfigLoader {
         configProperties.setProperty(ConfigProperties.MAILMAN_SEND_TOKEN.name(), System.getenv(ConfigProperties.MAILMAN_SEND_TOKEN.name()));
         configProperties.setProperty(ConfigProperties.RABBITMQ_CONNECT_URL.name(), System.getenv(ConfigProperties.RABBITMQ_CONNECT_URL.name()));
         configProperties.setProperty(ConfigProperties.RABBITMQ_EXCHANGE.name(), System.getenv(ConfigProperties.RABBITMQ_EXCHANGE.name()));
-        configProperties.setProperty(ConfigProperties.RABBITMQ_KEYCLOAK_QUEUE.name(), System.getenv(ConfigProperties.RABBITMQ_KEYCLOAK_QUEUE.name()));
     }
 
 
