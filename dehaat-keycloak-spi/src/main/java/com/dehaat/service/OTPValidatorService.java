@@ -3,6 +3,7 @@ package com.dehaat.service;
 import com.dehaat.common.AuthenticationUtils;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 
@@ -15,9 +16,11 @@ public class OTPValidatorService implements OTPValidator{
     private int ttl;
     private int length;
     private OTPCredentialModel OtpCredential;
+    private UserModel user;
 
 
-    public OTPValidatorService(AuthenticationFlowContext context) {
+    public OTPValidatorService(AuthenticationFlowContext context, UserModel user) {
+        this.user=user;
         init(context);
     }
 
@@ -35,7 +38,7 @@ public class OTPValidatorService implements OTPValidator{
 
     private void init(AuthenticationFlowContext context){
         AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("mobile_otp_config");
-        OtpCredential = AuthenticationUtils.getCredentialProvider(context.getSession()).getDefaultCredential(context.getSession(), context.getRealm(), context.getUser());
+        OtpCredential = AuthenticationUtils.getCredentialProvider(context.getSession()).getDefaultCredential(context.getSession(), context.getRealm(), user);
         ttl = Integer.parseInt(config.getConfig().get("ttl"));
         length = Integer.parseInt(config.getConfig().get("length"));
     }

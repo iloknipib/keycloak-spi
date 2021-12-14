@@ -12,6 +12,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.json.JSONObject;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -22,6 +23,7 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -97,7 +99,7 @@ public class CustomRestEndPoints {
             Helper.getMessagingQueueService().send(message);
         }
 
-        if (user != null && user.isEnabled()) {
+        if (user != null && user.isEnabled() && AuthenticatorUtils.getDisabledByBruteForceEventError((BruteForceProtector)this.session.getProvider(BruteForceProtector.class), session, session.getContext().getRealm(),user)==null) {
 
             // get config details from server
             AuthenticatorConfigModel config = session.getContext().getRealm().getAuthenticatorConfigByAlias("mobile_otp_config");
@@ -214,7 +216,6 @@ public class CustomRestEndPoints {
         ResteasyProviderFactory.getInstance().injectProperties(usersResource);
         return usersResource.createUser(userRepresentation);
     }
-
 
     protected AdminAuth authenticateRealmAdminRequest(AccessToken token) {
         String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);

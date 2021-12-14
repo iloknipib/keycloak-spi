@@ -8,5 +8,4 @@ public enum ConfigProperties {
     MAILMAN_SEND_TOKEN,
     RABBITMQ_CONNECT_URL,
     RABBITMQ_EXCHANGE,
-    RABBITMQ_KEYCLOAK_QUEUE
 }

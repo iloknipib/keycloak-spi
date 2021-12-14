@@ -16,9 +16,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import static com.dehaat.common.AuthenticationUtils.getUserFromMobile;
 
 /**
  * @author sushil
@@ -35,43 +33,41 @@ public class BrowserFlowRegistrationAllowedForm extends UsernamePasswordForm {
 
     @Override
     public void action(AuthenticationFlowContext context) {
-        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        if (formData.containsKey("cancel")) {
-            context.cancelLogin();
-        } else if (this.validateForm(context, formData)) {
+        if (this.validateForm(context)) {
             context.success();
         }
     }
 
-    protected boolean validateForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
-        return this.validateUser(context, formData);
+    protected boolean validateForm(AuthenticationFlowContext context) {
+        return this.validateUser(context);
     }
 
 
-    public boolean validateUser(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
+    public boolean validateUser(AuthenticationFlowContext context) {
         context.clearUser();
-        String mobileNumber = inputData.getFirst(AuthenticationManager.FORM_USERNAME).trim();
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
+        String mobileNumber = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
         UserModel user = null;
-        boolean isValidMobile = MobileNumberValidator.isValid(mobileNumber);
+        boolean isValidMobile = false;
+        if (mobileNumber != null) {
+            mobileNumber = mobileNumber.trim();
+            isValidMobile = MobileNumberValidator.isValid(mobileNumber);
+        }
         if (!isValidMobile) {
             context.challenge(challengeMessage(context, INVALID_MOBILE_ERROR, AuthenticationManager.FORM_USERNAME));
 
         } else {
-            Stream<UserModel> userStream = context.getSession().users().searchForUserByUserAttributeStream(context.getRealm(), MOBILE_NUMBER, mobileNumber);
-            List<UserModel> usersList = userStream.collect(Collectors.toList());
+            user = getUserFromMobile(mobileNumber, context.getSession());
 
             /** mobile already registered **/
-            if (usersList.size() > 0) {
-                user = usersList.get(0);
-                context.setUser(user);
-                context.success();
+            if (user != null && user.isEnabled()) {
+                return true;
             } else {
                 /** create new user **/
                 user = AuthenticationUtils.createUser(inputData, context.getSession());
                 AuthenticationUtils.generateSecret(user.getId(), context.getSession());
                 user.setSingleAttribute(MOBILE_NUMBER, mobileNumber);
                 user.setEnabled(true);
-                context.setUser(user);
                 context.success();
 
                 /** send message to the messaging queue ***/

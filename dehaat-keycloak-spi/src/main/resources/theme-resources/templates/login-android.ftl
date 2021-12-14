@@ -1,4 +1,4 @@
-<#import "template.ftl" as layout>
+<#import "custom_dehaat_template.ftl" as layout>
 <@layout.registrationLayout displayInfo=true; section>
 	<#if section = "header">
 		${msg("smsAuthTitle",realm.displayName, "mobileLabel")}
