@@ -10,6 +10,7 @@ LABEL maintainer="Subhash Samota <subhash.samota@agrevolution.in>"
 COPY --from=build /home/app/target/dehaat-keycloak-spi-1.0.jar /opt/jboss/keycloak/
 RUN curl -L https://github.com/aerogear/keycloak-metrics-spi/releases/download/1.0.4/keycloak-metrics-spi-1.0.4.jar --output /opt/jboss/keycloak/keycloak-metrics-spi-1.0.4.jar
 COPY docker/custom-entrypoint.sh /opt/jboss/tools/docker-entrypoint.sh
+COPY dehaat-keycloak-spi/src/main/resources/theme-resources/templates/custom_dehaat_template.ftl /opt/jboss/keycloak/themes/base/login
 USER root
 RUN chmod +x /opt/jboss/tools/docker-entrypoint.sh
 USER 1000
