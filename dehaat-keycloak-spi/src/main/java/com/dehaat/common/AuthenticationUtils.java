@@ -1,8 +1,9 @@
 package com.dehaat.common;
 
+import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.OTPCredentialProvider;
-import org.keycloak.credential.PasswordCredentialProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -15,6 +16,9 @@ import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 
 import javax.ws.rs.core.MultivaluedMap;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author sushil
@@ -23,6 +27,8 @@ public class AuthenticationUtils {
     /**
      * This class is meant to expose keycloak core code
      */
+    private static final String MOBILE_NUMBER = "mobile_number";
+
     public static void generateSecret(String userID, KeycloakSession session) {
         UserModel user = session.users().getUserById(session.getContext().getRealm(), userID);
         RealmModel realm = session.getContext().getRealm();
@@ -42,5 +48,28 @@ public class AuthenticationUtils {
 
     public static OTPCredentialProvider getCredentialProvider(KeycloakSession session) {
         return (OTPCredentialProvider) session.getProvider(CredentialProvider.class, "keycloak-otp");
+    }
+
+    public static UserModel getUserFromMobile(String mobileNumber, KeycloakSession session) {
+        UserModel user = null;
+        if (mobileNumber == null || mobileNumber.isEmpty()) {
+            return null;
+        }
+        Stream<UserModel> userStream = session.users().searchForUserByUserAttributeStream(session.getContext().getRealm(), MOBILE_NUMBER, mobileNumber);
+        List<UserModel> usersList = userStream.collect(Collectors.toList());
+
+        /** user exists **/
+        if (usersList.size() > 0) {
+            user = usersList.get(0);
+        }
+        return user;
+    }
+
+    public static boolean isDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
+        String bruteForceError = AuthenticatorUtils.getDisabledByBruteForceEventError(context.getProtector(), context.getSession(), context.getRealm(), user);
+        if (bruteForceError != null) {
+            return true;
+        }
+        return false;
     }
 }

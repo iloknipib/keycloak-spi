@@ -1,12 +1,13 @@
 package com.dehaat.spi.authentication;
 
+import com.dehaat.common.AuthenticationUtils;
 import com.dehaat.common.Helper;
 import com.dehaat.common.MobileNumberValidator;
 import com.dehaat.service.OTPValidator;
 import com.dehaat.service.OTPValidatorService;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
+import org.keycloak.authentication.Authenticator;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -16,19 +17,17 @@ import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static com.dehaat.common.AuthenticationUtils.getUserFromMobile;
 
 
 /**
  * @author sushil
  **/
-public class AndroidLoginForm extends OTPFormAuthenticator {
+public class AndroidLoginForm implements Authenticator {
 
     private static final String TPL_CODE = "login-android.ftl";
     private static final String INVALID_MOBILE_ERROR = "Invalid Mobile Number";
-    private static final String MOBILE_NUMBER = "mobile_number";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -37,53 +36,61 @@ public class AndroidLoginForm extends OTPFormAuthenticator {
 
     @Override
     public void action(AuthenticationFlowContext context) {
-        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        if (formData.containsKey("cancel")) {
-            context.cancelLogin();
-        } else if (this.validateForm(context, formData)) {
+        if (this.validateForm(context)) {
             context.success();
         }
     }
 
-    protected boolean validateForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
-        return this.validateUser(context, formData) && this.validateOTP(context, formData);
+    protected boolean validateForm(AuthenticationFlowContext context) {
+        UserModel user = getUserAndValidate(context);
+        boolean isValidOtp = false;
+        if (user != null && user.isEnabled() && !AuthenticationUtils.isDisabledByBruteForce(context, user)) {
+            context.getAuthenticationSession().setAuthNote("ATTEMPTED_USERNAME", user.getUsername());
+            isValidOtp = this.validateOTP(context, user);
+            if (isValidOtp) {
+                context.setUser(user);
+            }
+        }
+        return isValidOtp;
     }
 
-    public boolean validateUser(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
+    protected UserModel getUserAndValidate(AuthenticationFlowContext context) {
         context.clearUser();
-        String mobileNumber = inputData.getFirst("mobile").trim();
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
+        String mobileNumber = inputData.getFirst("mobile");
         UserModel user = null;
-        boolean isValidMobile = MobileNumberValidator.isValid(mobileNumber);
-        if (!isValidMobile) {
-            challengeMessage(context, INVALID_MOBILE_ERROR, AuthenticationManager.FORM_USERNAME);
-        } else {
-            Stream<UserModel> userStream = context.getSession().users().searchForUserByUserAttributeStream(context.getRealm(), MOBILE_NUMBER, mobileNumber);
-            List<UserModel> usersList = userStream.collect(Collectors.toList());
+        boolean isValidMobile = false;
+        if (mobileNumber != null) {
+            mobileNumber = mobileNumber.trim();
+            isValidMobile = MobileNumberValidator.isValid(mobileNumber);
+        }
 
-            /** mobile already registered **/
-            if (usersList.size() > 0) {
-                user = usersList.get(0);
-                context.setUser(user);
-                context.success();
-            } else {
+        if (!isValidMobile) {
+            Response challengeResponse = this.challengeMessage(context, INVALID_MOBILE_ERROR, AuthenticationManager.FORM_USERNAME);
+            context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
+        } else {
+            user = getUserFromMobile(mobileNumber, context.getSession());
+
+            /** mobile not registered **/
+            if (user == null || !user.isEnabled() || AuthenticationUtils.isDisabledByBruteForce(context, user)) {
                 /** raise error **/
-                Response challengeResponse = this.challenge(context, INVALID_MOBILE_ERROR, AuthenticationManager.FORM_USERNAME);
+                Response challengeResponse = this.challengeMessage(context, INVALID_MOBILE_ERROR, AuthenticationManager.FORM_USERNAME);
                 context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             }
         }
-        return user != null && user.isEnabled();
+        return user;
     }
 
-    public boolean validateOTP(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
+    protected boolean validateOTP(AuthenticationFlowContext context, UserModel user) {
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         String otp = inputData.getFirst("otp");
         if (otp != null && !otp.isEmpty()) {
             otp = otp.trim();
         }
 
-        UserModel userModel = context.getUser();
-        if (this.enabledUser(context, userModel)) {
+        if (user != null && user.isEnabled()) {
             if (otp == null) {
-                Response challengeResponse = this.challenge(context, "invalidTotpMessage", "totp");
+                Response challengeResponse = this.challengeMessage(context, "invalidTotpMessage", "totp");
                 context.challenge(challengeResponse);
             } else {
                 boolean isProdEnv = Helper.isProdEnv();
@@ -92,20 +99,18 @@ public class AndroidLoginForm extends OTPFormAuthenticator {
                         return true;
                     }
                 }
-                OTPValidator otpValidator = new OTPValidatorService(context);
+                OTPValidator otpValidator = new OTPValidatorService(context, user);
                 try {
                     boolean valid = otpValidator.isValid(otp);
                     if (valid) {
                         return true;
                     }
-                }catch (Exception e) {
-                    context.getEvent().user(userModel).error(e.getMessage());
-                    Response challengeResponse = this.challenge(context, "invalidOtpCredentials", "totp");
+                } catch (Exception e) {
+                    Response challengeResponse = this.challengeMessage(context, "invalidOtpCredentials", "totp");
                     context.failureChallenge(AuthenticationFlowError.CREDENTIAL_SETUP_REQUIRED, challengeResponse);
                     return false;
                 }
-                context.getEvent().user(userModel).error("invalid_user_credentials");
-                Response challengeResponse = this.challenge(context, "invalidTotpMessage", "totp");
+                Response challengeResponse = this.challengeMessage(context, "invalidTotpMessage", "totp");
                 context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             }
         }
@@ -144,10 +149,6 @@ public class AndroidLoginForm extends OTPFormAuthenticator {
             }
         }
 
-        return form.createForm(TPL_CODE);
-    }
-
-    protected Response createLoginForm(LoginFormsProvider form) {
         return form.createForm(TPL_CODE);
     }
 

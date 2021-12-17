@@ -1,7 +1,7 @@
-<#import "template.ftl" as layout>
+<#import "custom_dehaat_template.ftl" as layout>
 <@layout.registrationLayout displayInfo=true; section>
 	<#if section = "header">
-		${msg("smsAuthTitle",realm.displayName, "mobileLabel")}
+
 	<#elseif section = "form">
 		<form id="kc-sms-code-login-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
 			<div class="${properties.kcFormGroupClass!}">
