@@ -2,6 +2,7 @@ package com.dehaat.rest;
 
 import com.dehaat.common.AuthenticationUtils;
 import com.dehaat.common.Helper;
+import com.dehaat.common.HoneybadgerErrorReporter;
 import com.dehaat.common.MobileNumberValidator;
 import com.dehaat.service.OTPGeneratorService;
 import com.dehaat.service.OTPGenerator;
@@ -87,8 +88,7 @@ public class CustomRestEndPoints {
             user = usersList.get(0);
         } else {
             /** create new user **/
-            MultivaluedMap<String, String> inputData = new MultivaluedMapImpl<>();
-            user = AuthenticationUtils.createUser(inputData, session);
+            user = AuthenticationUtils.createUser(session);
             AuthenticationUtils.generateSecret(user.getId(), session);
             user.setSingleAttribute(MOBILE, mobile_number);
             user.setEnabled(true);
@@ -121,6 +121,7 @@ public class CustomRestEndPoints {
             }
         }
         // 500 on failure
+        HoneybadgerErrorReporter.getReporter().reportError(new Exception(SENT_SMS_MOBILE_FAIL));
         return Response.serverError().entity(SENT_SMS_MOBILE_FAIL).build();
     }
 

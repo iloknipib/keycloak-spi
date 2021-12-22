@@ -2,6 +2,7 @@ package com.dehaat.spi.authentication;
 
 import com.dehaat.common.AuthenticationUtils;
 import com.dehaat.common.Helper;
+import com.dehaat.common.HoneybadgerErrorReporter;
 import com.dehaat.common.MobileNumberValidator;
 import com.dehaat.service.*;
 import org.keycloak.authentication.AuthenticationFlowContext;
@@ -55,6 +56,7 @@ public class OtpAuthenticatorForm extends OTPFormAuthenticator {
                     else
                         throw new Exception(SENT_SMS_MOBILE_FAIL);
                 } catch (Exception e) {
+                    HoneybadgerErrorReporter.getReporter().reportError(new Exception(e.getMessage()));
                     context.failureChallenge(AuthenticationFlowError.INTERNAL_ERROR,
                             context.form().setError("smsAuthSmsNotSent", e.getMessage())
                                     .createErrorPage(Response.Status.INTERNAL_SERVER_ERROR));

@@ -67,6 +67,14 @@
         </dependency>
 
 
+        <dependency>
+            <groupId>io.honeybadger</groupId>
+            <artifactId>honeybadger-java</artifactId>
+            <!-- Set the specific version below in order to ensure API compatibility in future versions -->
+            <version>2.1.0</version>
+        </dependency>
+
+
     </dependencies>
 
     <dependencyManagement>
@@ -98,7 +106,7 @@
                             <artifactSet>
                                 <excludes>
                                     <exclude>com.fasterxml.jackson.core</exclude>
-                                    <exclude>org.apache.httpcomponents</exclude>
+<!--                                    <exclude>org.apache.httpcomponents</exclude>-->
                                     <exclude>commons-logging</exclude>
                                     <exclude>commons-codec</exclude>
                                 </excludes>

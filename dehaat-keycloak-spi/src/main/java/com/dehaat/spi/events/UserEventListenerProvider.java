@@ -3,6 +3,7 @@ package com.dehaat.spi.events;
 
 import com.dehaat.common.AuthenticationUtils;
 import com.dehaat.common.Helper;
+import com.dehaat.common.HoneybadgerErrorReporter;
 import org.jboss.logging.Logger;
 import org.json.JSONObject;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
@@ -16,7 +17,6 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.*;
-import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.resources.LoginActionsService;
@@ -97,47 +97,35 @@ public class UserEventListenerProvider implements EventListenerProvider {
 
 
     private void sendResetPasswordEmail(UserModel user, String clientId) {
+        String redirectUri=null;
         List<String> actions = new LinkedList();
-        String redirectUri = null;
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
         ClientModel client = this.session.getContext().getRealm().getClientById(clientId);
         if (client.getRedirectUris().size() > 0) {
             redirectUri = client.getRedirectUris().iterator().next();
         }
-        executeActionsEmail(user, redirectUri, client.getClientId(), actions);
+        executeActionsEmail(user, redirectUri, client, actions);
     }
 
 
-    private Response executeActionsEmail(UserModel user, String redirectUri, String clientId, List<String> actions) {
+    private Response executeActionsEmail(UserModel user, String redirectUri, ClientModel client, List<String> actions) {
         if (user.getEmail() == null) {
             return ErrorResponse.error("User email missing", Response.Status.BAD_REQUEST);
         } else if (!user.isEnabled()) {
             throw new WebApplicationException(ErrorResponse.error("User is disabled", Response.Status.BAD_REQUEST));
-        } else if (redirectUri != null && clientId == null) {
+        } else if (redirectUri != null && client == null) {
             throw new WebApplicationException(ErrorResponse.error("Client id missing", Response.Status.BAD_REQUEST));
         } else {
-            if (clientId == null) {
-                clientId = "account";
-            }
-
-            ClientModel client = this.session.getContext().getRealm().getClientByClientId(clientId);
             if (client == null) {
                 throw new WebApplicationException(ErrorResponse.error("Client doesn't exist", Response.Status.BAD_REQUEST));
             } else if (!client.isEnabled()) {
                 throw new WebApplicationException(ErrorResponse.error("Client is not enabled", Response.Status.BAD_REQUEST));
             } else {
-                if (redirectUri != null) {
-                    String redirect = RedirectUtils.verifyRedirectUri(this.session, redirectUri, client);
-                    if (redirect == null) {
-                        throw new WebApplicationException(ErrorResponse.error("Invalid redirect uri.", Response.Status.BAD_REQUEST));
-                    }
-                }
-
                 RealmModel realm = this.session.getContext().getRealm();
                 Integer lifespan = realm.getActionTokenGeneratedByAdminLifespan();
 
-
                 int expiration = Time.currentTime() + lifespan;
-                ExecuteActionsActionToken token = new ExecuteActionsActionToken(user.getId(), user.getEmail(), expiration, actions, redirectUri, clientId);
+                ExecuteActionsActionToken token = new ExecuteActionsActionToken(user.getId(), user.getEmail(), expiration, actions, redirectUri, client.getClientId());
 
                 try {
                     UriBuilder builder = LoginActionsService.actionTokenProcessor(this.session.getContext().getUri());
@@ -146,6 +134,7 @@ public class UserEventListenerProvider implements EventListenerProvider {
                     ((EmailTemplateProvider) this.session.getProvider(EmailTemplateProvider.class)).setAttribute("requiredActions", token.getRequiredActions()).setRealm(realm).setUser(user).sendExecuteActions(link, TimeUnit.SECONDS.toMinutes((long) lifespan));
                     return Response.noContent().build();
                 } catch (EmailException var11) {
+                    HoneybadgerErrorReporter.getReporter().reportError(new WebApplicationException(ErrorResponse.error("Failed to send execute actions email (reset-password)", Response.Status.INTERNAL_SERVER_ERROR)));
                     ServicesLogger.LOGGER.failedToSendActionsEmail(var11);
                     return ErrorResponse.error("Failed to send execute actions email", Response.Status.INTERNAL_SERVER_ERROR);
                 }

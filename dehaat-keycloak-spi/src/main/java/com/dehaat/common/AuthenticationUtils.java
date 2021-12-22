@@ -1,5 +1,6 @@
 package com.dehaat.common;
 
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.credential.CredentialProvider;
@@ -37,8 +38,9 @@ public class AuthenticationUtils {
         otpCredentialProvider.createCredential(realm, user, credentialModel);
     }
 
-    public static UserModel createUser(MultivaluedMap<String, String> inputData, KeycloakSession session) throws ValidationException {
+    public static UserModel createUser(KeycloakSession session) throws ValidationException {
         String username = KeycloakModelUtils.generateId();
+        MultivaluedMap<String, String> inputData = new MultivaluedMapImpl<>();
         inputData.putSingle(UserModel.USERNAME, username);
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = profileProvider.create(UserProfileContext.REGISTRATION_USER_CREATION, inputData);
@@ -67,9 +69,6 @@ public class AuthenticationUtils {
 
     public static boolean isDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
         String bruteForceError = AuthenticatorUtils.getDisabledByBruteForceEventError(context.getProtector(), context.getSession(), context.getRealm(), user);
-        if (bruteForceError != null) {
-            return true;
-        }
-        return false;
+        return bruteForceError != null;
     }
 }
