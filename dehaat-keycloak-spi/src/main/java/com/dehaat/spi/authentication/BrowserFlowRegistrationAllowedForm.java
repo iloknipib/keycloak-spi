@@ -3,6 +3,7 @@ package com.dehaat.spi.authentication;
 import com.dehaat.common.AuthenticationUtils;
 import com.dehaat.common.Helper;
 import com.dehaat.common.MobileNumberValidator;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.json.JSONObject;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
@@ -16,6 +17,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+
 import static com.dehaat.common.AuthenticationUtils.getUserFromMobile;
 
 /**
@@ -55,39 +57,31 @@ public class BrowserFlowRegistrationAllowedForm extends UsernamePasswordForm {
         }
         if (!isValidMobile) {
             context.challenge(challengeMessage(context, INVALID_MOBILE_ERROR, AuthenticationManager.FORM_USERNAME));
-
+            return false;
         } else {
             user = getUserFromMobile(mobileNumber, context.getSession());
-
             /** mobile already registered **/
-            if (user != null && user.isEnabled()) {
+            if (user != null && user.isEnabled() && !AuthenticationUtils.isDisabledByBruteForce(context, user)) {
                 return true;
-            } else {
+            } else if (user == null) {
                 /** create new user **/
-                user = AuthenticationUtils.createUser(inputData, context.getSession());
+                user = AuthenticationUtils.createUser(context.getSession());
                 AuthenticationUtils.generateSecret(user.getId(), context.getSession());
                 user.setSingleAttribute(MOBILE_NUMBER, mobileNumber);
                 user.setEnabled(true);
-                context.success();
 
                 /** send message to the messaging queue ***/
                 UserRepresentation userRepresentation = ModelToRepresentation.toRepresentation(context.getSession(), context.getRealm(), user);
                 JSONObject jsonObj = new JSONObject(userRepresentation);
                 JSONObject message = Helper.setMessageQueueData(OperationType.CREATE.name(), jsonObj);
                 Helper.getMessagingQueueService().send(message);
+                return true;
+            } else {
+                /** if user is blocked by brute force or not enabled **/
+                context.challenge(challengeMessage(context, INVALID_MOBILE_ERROR, AuthenticationManager.FORM_USERNAME));
+                return false;
             }
         }
-        return user != null && user.isEnabled();
-    }
-
-
-    protected Response challenge(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
-        LoginFormsProvider forms = context.form();
-        if (!formData.isEmpty()) {
-            forms.setFormData(formData);
-        }
-
-        return forms.createLoginUsername();
     }
 
     protected Response challengeMessage(AuthenticationFlowContext context, String error, String field) {
@@ -103,10 +97,5 @@ public class BrowserFlowRegistrationAllowedForm extends UsernamePasswordForm {
 
         return form.createForm(TPL_CODE);
     }
-
-    protected Response createLoginForm(LoginFormsProvider form) {
-        return form.createForm(TPL_CODE);
-    }
-
 }
 

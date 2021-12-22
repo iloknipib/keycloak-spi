@@ -1,5 +1,6 @@
 package com.dehaat.service;
 
+import com.dehaat.common.HoneybadgerErrorReporter;
 import com.dehaat.config.ConfigLoader;
 import com.dehaat.config.ConfigProperties;
 import com.rabbitmq.client.Channel;
@@ -25,7 +26,7 @@ public class MessagingQueueService implements MessagingQueue {
         try {
             channel.basicPublish(RABBITMQ_EXCHANGE, "", null, messageBodyBytes);
         } catch (IOException ex) {
-            System.out.println("Error: Error while publishing data to MessagingQueue");
+            HoneybadgerErrorReporter.getReporter().reportError(new Exception("Error: Error while publishing data to MessagingQueue"));
         }
     }
 
@@ -39,7 +40,7 @@ public class MessagingQueueService implements MessagingQueue {
                 Connection connection = factory.newConnection();
                 channel = connection.createChannel();
             } catch (Exception ex) {
-                System.out.println("Error: Unable to create channel to connect to messaging queue");
+                HoneybadgerErrorReporter.getReporter().reportError(new Exception("Error: Unable to create channel to connect to messaging queue"));
             }
             return channel;
         }
